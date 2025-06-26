@@ -2,19 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import '../styling/Discover.css';
 import Card from '../components/Card.jsx';
 import SearchBar from '../components/SearchBar.jsx';
-
-// List of card colors and types for user selection
-const COLORS = [
-  { name: 'White', code: 'W' },
-  { name: 'Blue', code: 'U' },
-  { name: 'Black', code: 'B' },
-  { name: 'Red', code: 'R' },
-  { name: 'Green', code: 'G' },
-  { name: 'Multicolor', code: 'M' },
-];
-const TYPES = [
-  'Artifact', 'Enchantment', 'Creature', 'Land', 'Instant', 'Planeswalker', 'Sorcery'
-];
+import ModeSelector from '../components/ModeSelector.jsx';
+import ColorSelector from '../components/ColorSelector.jsx';
+import TypeSelector from '../components/TypeSelector.jsx';
+import SetsTable from '../components/SetsTable.jsx';
+import CardGrid from '../components/CardGrid.jsx';
 
 const Discover = () => {
   // UI state: which main category is selected
@@ -165,99 +157,23 @@ const Discover = () => {
 
   // Table-like layout for sets, now full width and height, with card count
   const renderSets = () => (
-    <div className="overflow-x-auto h-[70vh] w-full bg-gray-900 rounded shadow flex flex-col">
-      <h2 className="text-xl font-bold mb-2 text-white">Select a Set</h2>
-      {loading && <p className="text-gray-300">Loading sets...</p>}
-      <table className="w-full text-left text-base text-gray-200 table-fixed">
-        <thead className="bg-gray-800 sticky top-0">
-          <tr>
-            <th className="py-2 px-4 w-2/5">Set Name</th>
-            <th className="py-2 px-4 w-1/6">Code</th>
-            <th className="py-2 px-4 w-1/6">Release Date</th>
-            <th className="py-2 px-4 w-1/6">Card Count</th>
-          </tr>
-        </thead>
-        <tbody className="overflow-y-auto">
-          {sets.map(set => (
-            <tr
-              key={set.code}
-              className="hover:bg-gray-700 cursor-pointer text-lg"
-              onClick={() => setSelectedSet(set.code)}
-            >
-              <td className="py-2 px-4 border-b border-gray-800">{set.name}</td>
-              <td className="py-2 px-4 border-b border-gray-800">{set.code.toUpperCase()}</td>
-              <td className="py-2 px-4 border-b border-gray-800">{set.released_at}</td>
-              <td className="py-2 px-4 border-b border-gray-800">{set.card_count}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      <SetsTable sets={sets} onSetSelect={setSelectedSet} loading={loading} />
   );
 
   // UI for selecting colors
   const renderColors = () => (
-    <div>
-      <h2 className="text-xl font-bold mb-2 text-white">Select a Color</h2>
-      <div className="flex gap-2 flex-wrap">
-        {COLORS.map(color => (
-          <button
-            key={color.code}
-            className="px-3 py-1 bg-gray-700 rounded hover:bg-gray-500 text-white border border-gray-500"
-            onClick={() => setSelectedColor(color.code)}
-          >
-            {color.name}
-          </button>
-        ))}
-      </div>
-    </div>
+      <ColorSelector onColorSelect={setSelectedColor} />
   );
 
   // UI for selecting types
   const renderTypes = () => (
-    <div>
-      <h2 className="text-xl font-bold mb-2 text-white">Select a Card Type</h2>
-      <div className="flex gap-2 flex-wrap">
-        {TYPES.map(type => (
-          <button
-            key={type}
-            className="px-3 py-1 bg-gray-700 rounded hover:bg-gray-500 text-white border border-gray-500"
-            onClick={() => setSelectedType(type)}
-          >
-            {type}
-          </button>
-        ))}
-      </div>
-    </div>
+      <TypeSelector onTypeSelect={setSelectedType} />
   );
-
-  // UI for filtering/sorting (for sets, you can expand this as needed)
-  // ...
 
   return (
     <div className="discover-container p-4 bg-black min-h-screen pt-20">
       <h1 className="text-2xl font-bold mb-4 text-white">Discover</h1>
-      {/* Main category buttons */}
-      <div className="flex gap-4 mb-6">
-        <button
-          className={`px-4 py-2 rounded ${mode === 'sets' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}
-          onClick={() => setMode('sets')}
-        >
-          Sets
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${mode === 'color' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}
-          onClick={() => setMode('color')}
-        >
-          By Color
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${mode === 'type' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}
-          onClick={() => setMode('type')}
-        >
-          Card Type
-        </button>
-      </div>
+      <ModeSelector mode={mode} onModeChange={setMode} />
 
       {/* Show relevant options based on mode */}
       {mode === 'sets' && !selectedSet && renderSets()}
@@ -272,21 +188,7 @@ const Discover = () => {
           {loading && <p className="text-gray-300">Loading cards...</p>}
           {error && <p className="text-red-500">{error}</p>}
           {/* Card grid: responsive grid layout for cards in a scrollable container */}
-          <div className="h-[70vh] w-full overflow-y-auto bg-black rounded">
-            <div
-              ref={cardGridRef}
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 w-full"
-            >
-              {cards.sort((a, b) => {
-                if (sortOption === 'name') return a.name.localeCompare(b.name);
-                if (sortOption === 'cmc') return a.cmc - b.cmc;
-                if (sortOption === 'price') return (a.prices.usd || 0) - (b.prices.usd || 0);
-                return 0;
-              }).map(card => (
-                <Card key={card.id} card={card} />
-              ))}
-            </div>
-          </div>
+          <CardGrid cards={cards} sortOption={sortOption} onSortChange={setSortOption} cardGridRef={cardGridRef}/>
           {/* Pagination: Load More button if there are more cards (for type/color only) */}
           {nextPage && (
             <div className="mt-4 flex justify-center">
