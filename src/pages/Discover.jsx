@@ -7,6 +7,9 @@ import ColorSelector from '../components/ColorSelector.jsx';
 import TypeSelector from '../components/TypeSelector.jsx';
 import SetsTable from '../components/SetsTable.jsx';
 import CardGrid from '../components/CardGrid.jsx';
+import PaginationControls from '../components/PaginationControls.jsx';
+import AdvancedFilters from '../components/AdvancedFilters.jsx';
+import EnhancedSorting from '../components/EnhancedSorting.jsx';
 
 const Discover = () => {
   // UI state: which main category is selected
@@ -23,8 +26,11 @@ const Discover = () => {
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
 
-
-  const [sortOption, setSortOption] = useState('name'); // 'name', 'cmc', 'price'
+  // Advanced filtering and sorting state
+  const [filters, setFilters] = useState({});
+  const [sortField, setSortField] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // For pagination
   const [nextPage, setNextPage] = useState(null);
@@ -131,6 +137,8 @@ const Discover = () => {
     setSelectedType(null);
     setError(null);
     setNextPage(null);
+    // Reset filters when mode changes
+    setFilters({});
   }, [mode]);
 
   // Load more cards (pagination): always append to the existing array (for type/color only)
@@ -153,6 +161,12 @@ const Discover = () => {
   // Scroll the window to the very top (including above the navbar)
   const handleBackToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handle enhanced sorting changes
+  const handleSortChange = ({ field, order }) => {
+    setSortField(field);
+    setSortOrder(order);
   };
 
   // Table-like layout for sets, now full width and height, with card count
@@ -184,34 +198,43 @@ const Discover = () => {
       {(selectedSet || selectedColor || selectedType) && (
         <div className="mt-6">
           <h2 className="text-xl font-bold mb-2 text-white">Cards</h2>
+          
+          {/* Advanced Filters */}
+          <AdvancedFilters 
+            filters={filters}
+            onFiltersChange={setFilters}
+            sets={sets}
+            isOpen={filtersOpen}
+            onToggle={() => setFiltersOpen(!filtersOpen)}
+          />
+
+          {/* Enhanced Sorting */}
+          <EnhancedSorting 
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSortChange={handleSortChange}
+          />
+
           {/* Show loading spinner/message until all cards are loaded for sets */}
           {loading && <p className="text-gray-300">Loading cards...</p>}
           {error && <p className="text-red-500">{error}</p>}
+          
           {/* Card grid: responsive grid layout for cards in a scrollable container */}
-          <CardGrid cards={cards} sortOption={sortOption} onSortChange={setSortOption} cardGridRef={cardGridRef}/>
-          {/* Pagination: Load More button if there are more cards (for type/color only) */}
-          {nextPage && (
-            <div className="mt-4 flex justify-center">
-              <button
-                className="px-6 py-2 bg-gray-700 text-white rounded hover:bg-gray-500 border border-gray-500"
-                onClick={handleLoadMore}
-                disabled={loading}
-              >
-                {loading ? 'Loading...' : 'Load More'}
-              </button>
-            </div>
-          )}
-          {/* Back to Top button */}
-          {cards.length > 0 && (
-            <div className="mt-4 flex justify-center">
-              <button
-                className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-500 border border-gray-500"
-                onClick={handleBackToTop}
-              >
-                Back to Top
-              </button>
-            </div>
-          )}
+          <CardGrid 
+            cards={cards} 
+            filters={filters}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            cardGridRef={cardGridRef}
+          />
+          
+          <PaginationControls 
+            nextPage={nextPage}
+            loading={loading}
+            onLoadMore={handleLoadMore}
+            onBackToTop={handleBackToTop}
+            hasCards={cards.length > 0}
+          />
         </div>
       )}
     </div>
