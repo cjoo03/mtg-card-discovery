@@ -10,6 +10,7 @@ import CardGrid from '../components/CardGrid.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import AdvancedFilters from '../components/AdvancedFilters.jsx';
 import EnhancedSorting from '../components/EnhancedSorting.jsx';
+import CardModal from '../components/CardModal.jsx';
 
 const Discover = () => {
   // UI state: which main category is selected
@@ -36,6 +37,9 @@ const Discover = () => {
   const [nextPage, setNextPage] = useState(null);
   // Ref for the card grid to scroll to top
   const cardGridRef = useRef(null);
+
+  // For modal
+  const [selectedCard, setSelectedCard] = useState(null);
 
   // Fetch all sets from Scryfall when "Sets" mode is selected
   useEffect(() => {
@@ -169,6 +173,16 @@ const Discover = () => {
     setSortOrder(order);
   };
 
+  // Handler to open modal with card details
+  const handleCardClick = (card) => {
+    setSelectedCard(card);
+  };
+
+  // Handler to close modal
+  const handleCloseModal = () => {
+    setSelectedCard(null);
+  };
+
   // Table-like layout for sets, now full width and height, with card count
   const renderSets = () => (
       <SetsTable sets={sets} onSetSelect={setSelectedSet} loading={loading} />
@@ -226,6 +240,7 @@ const Discover = () => {
             sortField={sortField}
             sortOrder={sortOrder}
             cardGridRef={cardGridRef}
+            onCardClick={handleCardClick}
           />
           
           <PaginationControls 
@@ -236,6 +251,10 @@ const Discover = () => {
             hasCards={cards.length > 0}
           />
         </div>
+      )}
+      {/* Card Modal for details */}
+      {selectedCard && (
+        <CardModal card={selectedCard} onClose={handleCloseModal} />
       )}
     </div>
   );

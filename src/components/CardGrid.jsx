@@ -1,7 +1,7 @@
 import React from 'react'
 import Card from './Card.jsx'
 
-const CardGrid = ({ cards, filters, sortField, sortOrder, cardGridRef }) => {
+const CardGrid = ({ cards, filters, sortField, sortOrder, cardGridRef, onCardClick }) => {
   // Filter cards based on applied filters
   const filterCards = (cards) => {
     return cards.filter(card => {
@@ -111,15 +111,20 @@ const CardGrid = ({ cards, filters, sortField, sortOrder, cardGridRef }) => {
         )}
       </div>
       
-      <div className="h-[70vh] w-full overflow-y-auto bg-black rounded">
-        <div
-          ref={cardGridRef}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 w-full"
-        >
-          {sortedCards.map(card => (
-            <Card key={card.id} card={card} />
-          ))}
-        </div>
+      <div
+        ref={cardGridRef}
+        className="
+          h-[calc(100vh-6rem)] w-full overflow-y-auto bg-black rounded
+          grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4
+          scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900
+        "
+        style={{ minHeight: 0, maxWidth: '100vw' }}
+      >
+        {sortedCards.map(card => (
+          <div key={card.id} onClick={() => onCardClick && onCardClick(card)} className="cursor-pointer">
+            <Card card={card} />
+          </div>
+        ))}
       </div>
 
       {/* No results message */}
