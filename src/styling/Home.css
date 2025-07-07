@@ -1,15 +1,1 @@
-.home-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    width: 100vw;
-    background-color: #000000;
-    color: #000;
-}
-
-.home-container h1 {
-    font-size: 4rem;
-    color: #fff;
-}
+/* Remove all custom CSS for .home-container and h1. Let Tailwind handle centering and sizing. */

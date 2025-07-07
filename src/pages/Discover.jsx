@@ -50,6 +50,10 @@ const Discover = () => {
         .then(data => {
           setSets(data.data || []);
           setLoading(false);
+          // Force scroll to top when sets are loaded
+          setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 100);
         })
         .catch(() => setLoading(false));
     }
@@ -143,6 +147,10 @@ const Discover = () => {
     setNextPage(null);
     // Reset filters when mode changes
     setFilters({});
+    // Force scroll to top when mode changes
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   }, [mode]);
 
   // Load more cards (pagination): always append to the existing array (for type/color only)
@@ -199,63 +207,89 @@ const Discover = () => {
   );
 
   return (
-    <div className="discover-container p-4 bg-black min-h-screen pt-20">
-      <h1 className="text-2xl font-bold mb-4 text-white">Discover</h1>
-      <ModeSelector mode={mode} onModeChange={setMode} />
-
-      {/* Show relevant options based on mode */}
-      {mode === 'sets' && !selectedSet && renderSets()}
-      {mode === 'color' && !selectedColor && renderColors()}
-      {mode === 'type' && !selectedType && renderTypes()}
-
-      {/* Show cards if any option is selected */}
-      {(selectedSet || selectedColor || selectedType) && (
-        <div className="mt-6">
-          <h2 className="text-xl font-bold mb-2 text-white">Cards</h2>
-          
-          {/* Advanced Filters */}
-          <AdvancedFilters 
-            filters={filters}
-            onFiltersChange={setFilters}
-            sets={sets}
-            isOpen={filtersOpen}
-            onToggle={() => setFiltersOpen(!filtersOpen)}
-          />
-
-          {/* Enhanced Sorting */}
-          <EnhancedSorting 
-            sortField={sortField}
-            sortOrder={sortOrder}
-            onSortChange={handleSortChange}
-          />
-
-          {/* Show loading spinner/message until all cards are loaded for sets */}
-          {loading && <p className="text-gray-300">Loading cards...</p>}
-          {error && <p className="text-red-500">{error}</p>}
-          
-          {/* Card grid: responsive grid layout for cards in a scrollable container */}
-          <CardGrid 
-            cards={cards} 
-            filters={filters}
-            sortField={sortField}
-            sortOrder={sortOrder}
-            cardGridRef={cardGridRef}
-            onCardClick={handleCardClick}
-          />
-          
-          <PaginationControls 
-            nextPage={nextPage}
-            loading={loading}
-            onLoadMore={handleLoadMore}
-            onBackToTop={handleBackToTop}
-            hasCards={cards.length > 0}
-          />
+    <div className="min-h-screen flex flex-col items-center justify-start relative pt-28 pb-12 px-2">
+      {/* Hero Accent Gradient */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 z-0 w-[600px] h-[300px] bg-gradient-to-br from-blue-700/30 via-purple-700/20 to-transparent rounded-full blur-3xl opacity-60 pointer-events-none" />
+      {/* Hero Icon and Heading */}
+      <div className="relative z-10 flex flex-col items-center mb-8 animate-fade-in">
+        <div className="w-14 h-14 mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl animate-bounce-slow">
+          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
-      )}
-      {/* Card Modal for details */}
-      {selectedCard && (
-        <CardModal card={selectedCard} onClose={handleCloseModal} />
-      )}
+        <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-tight text-center drop-shadow-lg">Discover</h1>
+        <p className="text-base md:text-lg text-gray-300 text-center max-w-xl mb-2">
+          Explore Magic: The Gathering sets, colors, and card types. Use advanced filters and sorting to find your next favorite card.
+        </p>
+      </div>
+      {/* Glassy Card for Mode Selector */}
+      <div className="relative z-10 w-full max-w-md flex flex-col items-center mb-10 animate-fade-in">
+        <div className="w-full glass rounded-2xl shadow-xl border border-white/10 p-6 flex flex-col items-center">
+          <ModeSelector mode={mode} onModeChange={setMode} />
+        </div>
+      </div>
+      {/* Main Content: Mode Options and Card Grid */}
+      <div className="relative z-10 w-full max-w-5xl flex flex-col items-center">
+        {/* Show relevant options based on mode */}
+        {mode === 'sets' && !selectedSet && (
+          <div className="w-full animate-fade-in">
+            {renderSets()}
+          </div>
+        )}
+        {mode === 'color' && !selectedColor && (
+          <div className="w-full animate-fade-in">
+            {renderColors()}
+          </div>
+        )}
+        {mode === 'type' && !selectedType && (
+          <div className="w-full animate-fade-in">
+            {renderTypes()}
+          </div>
+        )}
+        {/* Show cards if any option is selected */}
+        {(selectedSet || selectedColor || selectedType) && (
+          <div className="mt-8 w-full animate-fade-in">
+            <h2 className="text-xl font-bold mb-2 text-white">Cards</h2>
+            <AdvancedFilters 
+              filters={filters}
+              onFiltersChange={setFilters}
+              sets={sets}
+              isOpen={filtersOpen}
+              onToggle={() => setFiltersOpen(!filtersOpen)}
+            />
+            <EnhancedSorting 
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSortChange={handleSortChange}
+            />
+            {loading && <p className="text-gray-300">Loading cards...</p>}
+            {error && <p className="text-red-500">{error}</p>}
+            <CardGrid 
+              cards={cards} 
+              filters={filters}
+              sortField={sortField}
+              sortOrder={sortOrder}
+              cardGridRef={cardGridRef}
+              onCardClick={handleCardClick}
+            />
+            <PaginationControls 
+              nextPage={nextPage}
+              loading={loading}
+              onLoadMore={handleLoadMore}
+              onBackToTop={handleBackToTop}
+              hasCards={cards.length > 0}
+            />
+          </div>
+        )}
+        {selectedCard && (
+          <CardModal card={selectedCard} onClose={handleCloseModal} />
+        )}
+      </div>
+      {/* Custom Animation Keyframes for Hero Icon */}
+      <style>{`
+        @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .animate-bounce-slow { animation: bounce-slow 2.5s infinite; }
+      `}</style>
     </div>
   );
 };

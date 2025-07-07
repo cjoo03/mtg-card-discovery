@@ -102,34 +102,93 @@ const CardGrid = ({ cards, filters, sortField, sortOrder, cardGridRef, onCardCli
   const sortedCards = sortCards(filteredCards);
 
   return (
-    <div>
-      {/* Results count */}
-      <div className="mb-4 text-gray-300">
-        Showing {sortedCards.length} of {cards.length} cards
-        {Object.keys(filters).length > 0 && (
-          <span className="text-blue-400"> (filtered)</span>
-        )}
+    <div className="space-y-6">
+      {/* Results Header */}
+      <div className="glass rounded-xl p-4 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              <span className="text-white font-medium">
+                Showing {sortedCards.length} of {cards.length} cards
+              </span>
+            </div>
+            
+            {Object.keys(filters).length > 0 && (
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                <span className="text-blue-400 text-sm font-medium">Filtered</span>
+              </div>
+            )}
+          </div>
+
+          {/* Sort Indicator */}
+          <div className="flex items-center space-x-2 text-sm text-gray-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            <span>Sorted by {sortField}</span>
+          </div>
+        </div>
       </div>
       
+      {/* Cards Grid */}
       <div
         ref={cardGridRef}
         className="
-          h-[calc(100vh-6rem)] w-full overflow-y-auto bg-black rounded
-          grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4
-          scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900
+          h-[calc(100vh-12rem)] w-full overflow-y-auto
+          grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6
+          p-4 rounded-xl
         "
         style={{ minHeight: 0, maxWidth: '100vw' }}
       >
-        {sortedCards.map(card => (
-          <Card key={card.id} card={card} onClick={onCardClick} />
+        {sortedCards.map((card, index) => (
+          <div 
+            key={card.id} 
+            className="animate-fade-in"
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            <Card card={card} onClick={onCardClick} />
+          </div>
         ))}
       </div>
 
       {/* No results message */}
       {sortedCards.length === 0 && cards.length > 0 && (
-        <div className="text-center py-8 text-gray-400">
-          <p>No cards match your current filters.</p>
-          <p className="text-sm mt-2">Try adjusting your filter criteria.</p>
+        <div className="text-center py-12 animate-fade-in">
+          <div className="glass rounded-2xl p-8 max-w-md mx-auto">
+            <div className="w-16 h-16 bg-gray-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">No cards found</h3>
+            <p className="text-gray-400 text-sm mb-4">
+              No cards match your current filters.
+            </p>
+            <p className="text-gray-500 text-xs">
+              Try adjusting your filter criteria to see more results.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Empty state when no cards */}
+      {cards.length === 0 && (
+        <div className="text-center py-12 animate-fade-in">
+          <div className="glass rounded-2xl p-8 max-w-md mx-auto">
+            <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Start exploring</h3>
+            <p className="text-gray-400 text-sm">
+              Select a set, color, or type to begin discovering cards.
+            </p>
+          </div>
         </div>
       )}
     </div>
