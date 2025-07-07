@@ -121,9 +121,7 @@ const CardGrid = ({ cards, filters, sortField, sortOrder, cardGridRef, onCardCli
         style={{ minHeight: 0, maxWidth: '100vw' }}
       >
         {sortedCards.map(card => (
-          <div key={card.id} onClick={() => onCardClick && onCardClick(card)} className="cursor-pointer">
-            <Card card={card} />
-          </div>
+          <Card key={card.id} card={card} onClick={onCardClick} />
         ))}
       </div>
 

@@ -1,5 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { addCardToCollection, getCollection } from '../utils/localCollection.js';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
 
 const CardModal = ({ card, onClose }) => {
   if (!card) return null;
@@ -15,6 +28,47 @@ const CardModal = ({ card, onClose }) => {
     addCardToCollection(card);
     setAdded(true);
   };
+
+  // State for price history
+  const [priceHistory, setPriceHistory] = useState(null);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceError, setPriceError] = useState('');
+
+  // Fetch price history when modal opens
+  useEffect(() => {
+    const fetchPriceHistory = async () => {
+      setPriceLoading(true);
+      setPriceError('');
+      setPriceHistory(null);
+      try {
+        // Scryfall's API for price history (if available)
+        const res = await fetch(`https://api.scryfall.com/cards/${card.id}`);
+        const data = await res.json();
+        if (data.prices && data.prices.usd) {
+          // Scryfall does not provide full price history, but you can use the 'usd_foil' and 'usd_etched' for more info
+          // For demo, just show current price as a single point
+          setPriceHistory({
+            labels: ['Current'],
+            datasets: [
+              {
+                label: 'USD Price',
+                data: [parseFloat(data.prices.usd)],
+                borderColor: '#22d3ee',
+                backgroundColor: 'rgba(34,211,238,0.2)',
+                tension: 0.3,
+              },
+            ],
+          });
+        } else {
+          setPriceError('No price data available.');
+        }
+      } catch (err) {
+        setPriceError('Failed to fetch price data.');
+      }
+      setPriceLoading(false);
+    };
+    fetchPriceHistory();
+  }, [card.id]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
@@ -57,6 +111,19 @@ const CardModal = ({ card, onClose }) => {
               {added ? 'Added to Collection' : 'Add to Collection'}
             </button>
           </div>
+        </div>
+        {/* Price tracking chart */}
+        <div className="mt-6">
+          <h3 className="text-lg font-bold text-white mb-2">Price Tracking</h3>
+          {priceLoading && <p className="text-gray-300">Loading price data...</p>}
+          {priceError && <p className="text-red-400">{priceError}</p>}
+          {priceHistory && (
+            <Line data={priceHistory} options={{
+              responsive: true,
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true } },
+            }} />
+          )}
         </div>
       </div>
     </div>

@@ -3,8 +3,11 @@ import {
   getCollection,
   removeCardFromCollection,
   updateCardQuantity,
-  clearCollection
+  clearCollection,
+  addCardToCollection
 } from '../utils/localCollection.js';
+import CardGrid from '../components/CardGrid.jsx';
+import CardModal from '../components/CardModal.jsx';
 import '../styling/YourCards.css';
 
 // Utility to export collection to CSV
@@ -27,8 +30,56 @@ function exportToCSV(collection) {
   URL.revokeObjectURL(url);
 }
 
+// Parse decklist text (Archidekt/Moxfield style) into [{name, quantity}]
+function parseDecklist(text) {
+  return text
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line && !line.startsWith('//'))
+    .map(line => {
+      const match = line.match(/^(\d+)x?\s+(.+)$/i);
+      if (match) {
+        return { quantity: parseInt(match[1], 10), name: match[2].trim() };
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
+// Fetch card details from Scryfall in batches (max 75 per batch)
+async function fetchCardsByNames(names) {
+  const results = [];
+  const errors = [];
+  const batchSize = 75;
+  for (let i = 0; i < names.length; i += batchSize) {
+    const batch = names.slice(i, i + batchSize);
+    const query = batch.map(n => `!\"${n}\"`).join(' or ');
+    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.data) {
+        results.push(...data.data);
+      }
+      if (data.warnings) {
+        errors.push(...data.warnings);
+      }
+    } catch (err) {
+      errors.push(`Failed to fetch batch: ${batch.join(', ')}`);
+    }
+  }
+  return { results, errors };
+}
+
 const YourCards = () => {
   const [collection, setCollection] = useState([]);
+  // State for Archidekt import
+  const [importText, setImportText] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState('');
+  const [importError, setImportError] = useState('');
+  // State for card modal
+  const [selectedCard, setSelectedCard] = useState(null);
 
   // Load collection on mount
   useEffect(() => {
@@ -53,9 +104,75 @@ const YourCards = () => {
     setCollection([]);
   };
 
+  // Handle Archidekt import
+  const handleImport = async () => {
+    setImporting(true);
+    setImportProgress('Parsing decklist...');
+    setImportError('');
+    // Parse decklist
+    const parsed = parseDecklist(importText);
+    if (parsed.length === 0) {
+      setImportError('No valid cards found in decklist.');
+      setImporting(false);
+      return;
+    }
+    setImportProgress(`Fetching details for ${parsed.length} cards...`);
+    // Fetch card details in batches
+    const { results, errors } = await fetchCardsByNames(parsed.map(c => c.name));
+    // Map quantities
+    parsed.forEach(({ name, quantity }) => {
+      const card = results.find(c => c.name.toLowerCase() === name.toLowerCase());
+      if (card) {
+        for (let i = 0; i < quantity; i++) {
+          addCardToCollection(card);
+        }
+      } else {
+        errors.push(`Card not found: ${name}`);
+      }
+    });
+    setCollection(getCollection());
+    setImportProgress('');
+    setImporting(false);
+    setImportError(errors.length > 0 ? errors.join('\n') : '');
+    if (errors.length === 0) setImportText('');
+  };
+
+  // Handler to open modal with card details
+  const handleCardClick = (card) => {
+    setSelectedCard(card);
+  };
+
+  // Handler to close modal
+  const handleCloseModal = () => {
+    setSelectedCard(null);
+  };
+
   return (
     <div className="your-cards-container min-h-screen bg-black text-white p-8 pt-24">
       <h1 className="text-3xl font-bold mb-6">Your Card Collection</h1>
+      {/* Archidekt Import UI */}
+      <div className="mb-8 bg-gray-900 rounded-lg p-6 shadow-lg max-w-2xl mx-auto">
+        <h2 className="text-xl font-bold mb-2">Import from Archidekt/Moxfield</h2>
+        <p className="text-gray-300 mb-2">Paste your decklist below (one card per line, e.g. <code>4 Lightning Bolt</code>):</p>
+        <textarea
+          className="w-full h-32 p-2 rounded bg-gray-800 text-white border border-gray-700 mb-2"
+          value={importText}
+          onChange={e => setImportText(e.target.value)}
+          placeholder="4 Lightning Bolt\n2 Counterspell\n1 Sol Ring"
+          disabled={importing}
+        />
+        <div className="flex gap-4 items-center">
+          <button
+            onClick={handleImport}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white shadow"
+            disabled={importing || !importText.trim()}
+          >
+            {importing ? 'Importing...' : 'Import Decklist'}
+          </button>
+          {importProgress && <span className="text-gray-300">{importProgress}</span>}
+        </div>
+        {importError && <pre className="text-red-400 mt-2 whitespace-pre-wrap">{importError}</pre>}
+      </div>
       <div className="mb-4 flex gap-4">
         <button
           onClick={() => exportToCSV(collection)}
@@ -75,51 +192,14 @@ const YourCards = () => {
       {collection.length === 0 ? (
         <p className="text-gray-400">You have no cards in your collection yet.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-base text-gray-200 table-auto bg-gray-900 rounded">
-            <thead className="bg-gray-800">
-              <tr>
-                <th className="py-2 px-4">Image</th>
-                <th className="py-2 px-4">Name</th>
-                <th className="py-2 px-4">Set</th>
-                <th className="py-2 px-4">Type</th>
-                <th className="py-2 px-4">Price</th>
-                <th className="py-2 px-4">Quantity</th>
-                <th className="py-2 px-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {collection.map(card => (
-                <tr key={card.id} className="border-b border-gray-800">
-                  <td className="py-2 px-4">
-                    <img src={card.image} alt={card.name} className="w-16 rounded" />
-                  </td>
-                  <td className="py-2 px-4">{card.name}</td>
-                  <td className="py-2 px-4">{card.set}</td>
-                  <td className="py-2 px-4">{card.type}</td>
-                  <td className="py-2 px-4">{card.price ? `$${card.price}` : 'N/A'}</td>
-                  <td className="py-2 px-4">
-                    <input
-                      type="number"
-                      min="1"
-                      value={card.quantity}
-                      onChange={e => handleQuantityChange(card.id, Number(e.target.value))}
-                      className="w-16 px-2 py-1 rounded bg-gray-700 text-white border border-gray-600"
-                    />
-                  </td>
-                  <td className="py-2 px-4">
-                    <button
-                      onClick={() => handleRemove(card.id)}
-                      className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-white"
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Use CardGrid for consistent card display and modal support */}
+          <CardGrid cards={collection} onCardClick={handleCardClick} />
+        </>
+      )}
+      {/* Card Modal for details */}
+      {selectedCard && (
+        <CardModal card={selectedCard} onClose={handleCloseModal} />
       )}
     </div>
   );

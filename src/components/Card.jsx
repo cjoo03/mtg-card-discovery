@@ -1,8 +1,12 @@
 import React from 'react';
 
 // Card component displays a single card's info
-const Card = ({ card }) => (
-  <div className="bg-gray-800 bg-opacity-90 rounded p-2 m-2 w-48 flex flex-col items-center border border-gray-700">
+const Card = ({ card, onClick }) => (
+  <div
+    className="bg-gray-800 bg-opacity-90 rounded p-2 m-2 w-48 flex flex-col items-center border border-gray-700 cursor-pointer hover:ring-2 hover:ring-blue-400 transition"
+    onClick={() => onClick && onClick(card)}
+    title="Click for more details"
+  >
     <img src={card.image_uris?.normal} alt={card.name} className="rounded w-full mb-2" />
     <h2 className="text-base font-bold text-white text-center mb-1">{card.name}</h2>
     <p className="text-xs text-gray-300 text-center mb-1">{card.type_line}</p>
